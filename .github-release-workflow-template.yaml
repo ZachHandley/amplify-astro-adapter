@@ -1,0 +1,84 @@
+# Add this to your GitHub mirror repo at: .github/workflows/release.yaml
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v0.3.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          # Get commits since last tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Remove 'v' prefix for display
+          TAG="${VERSION#v}"
+
+          # Save to file for multiline handling
+          cat > /tmp/changelog.txt << EOF
+          ## amplify-astro-adapter $VERSION
+
+          ### Changes
+          ${COMMITS}
+
+          ### Installation
+
+          \`\`\`bash
+          npm install amplify-astro-adapter@${TAG}
+          \`\`\`
+
+          \`\`\`bash
+          pnpm add amplify-astro-adapter@${TAG}
+          \`\`\`
+
+          \`\`\`bash
+          yarn add amplify-astro-adapter@${TAG}
+          \`\`\`
+
+          ### Package Published
+          - amplify-astro-adapter@${TAG}
+
+          https://www.npmjs.com/package/amplify-astro-adapter
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: amplify-astro-adapter ${{ inputs.version }}
+          body_path: /tmp/changelog.txt
+          draft: false
+          prerelease: ${{ contains(inputs.version, 'alpha') || contains(inputs.version, 'beta') || contains(inputs.version, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        run: |
+          echo "### ✅ Release ${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**npm:** https://www.npmjs.com/package/amplify-astro-adapter" >> $GITHUB_STEP_SUMMARY

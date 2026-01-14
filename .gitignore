@@ -137,3 +137,10 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# pnpm
+.pnpm-store/
+
+# Amplify Hosting build output (generated during build)
+.amplify-hosting/
+

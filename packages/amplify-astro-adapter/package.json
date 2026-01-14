@@ -1,0 +1,31 @@
+{
+  "name": "amplify-astro-adapter",
+  "version": "0.3.0",
+  "private": false,
+  "description": "Deploy Astro to AWS Amplify (SSR) - extending @astrojs/node",
+  "keywords": [
+    "astro",
+    "withastro",
+    "astro-adapter",
+    "aws",
+    "amplify",
+    "ssr"
+  ],
+  "license": "MIT",
+  "author": "Zach Handley <zachhandley@gmail.com>",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./session": "./src/session.ts"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.1"
+  },
+  "peerDependencies": {
+    "astro": "^4.0.0 || ^5.0.0"
+  }
+}
