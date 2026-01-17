@@ -11,9 +11,9 @@
     "lint": "prettier --check \"packages/**/*.ts\" && eslint \"packages/**/*.ts\"",
     "lint:fix": "prettier --write \"packages/**/*.ts\" && eslint --fix \"packages/**/*.ts\"",
     "typecheck": "bun run --filter amplify-astro-adapter typecheck",
-    "test": "intellitester run tests/",
-    "test:debug": "intellitester run tests/ --debug",
-    "test:headed": "intellitester run tests/ --headed"
+    "test": "bunx intellitester@latest run tests/",
+    "test:debug": "bunx intellitester@latest run tests/ --debug",
+    "test:headed": "bunx intellitester@latest run tests/ --headed"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -22,7 +22,6 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.0.0",
-    "intellitester": "^0.2.43",
     "prettier": "^3.3.0",
     "typescript-eslint": "^8.53.0"
   },
