@@ -32,12 +32,7 @@ export function createAppHandler(app: NodeApp, options: Options): RequestHandler
       }
     : undefined;
 
-  return async (
-    req: NodeRequest,
-    res: ServerResponse,
-    next?: () => void,
-    locals?: object
-  ) => {
+  return async (req: NodeRequest, res: ServerResponse, next?: () => void, locals?: object) => {
     let request: Request;
     try {
       request = NodeApp.createRequest(req, {
