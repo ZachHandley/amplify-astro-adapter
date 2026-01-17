@@ -41,13 +41,24 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       const cookieOptions = config?.cookieOptions;
 
       if (entry.data) {
+        // Auto-detect secure from protocol
+        const isSecure = context.request.url.startsWith('https://');
+
+        // Determine domain: undefined for localhost, .domain.com for production
+        let domain = cookieOptions?.domain;
+        if (domain === undefined) {
+          const url = new URL(context.request.url);
+          const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+          domain = isLocalhost ? undefined : `.${url.hostname}`;
+        }
+
         // Set the session data cookie
         context.cookies.set(SESSION_DATA_COOKIE, entry.data, {
           httpOnly: cookieOptions?.httpOnly ?? true,
-          secure: cookieOptions?.secure ?? true,
+          secure: cookieOptions?.secure ?? isSecure,
           sameSite: cookieOptions?.sameSite ?? 'lax',
           path: cookieOptions?.path ?? '/',
-          domain: cookieOptions?.domain,
+          domain,
           maxAge: ttl,
         });
       } else {
