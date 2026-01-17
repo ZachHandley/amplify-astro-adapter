@@ -16,7 +16,6 @@ concurrency:
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '10'
 
 jobs:
   # ===========================================
@@ -33,8 +32,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm
-        run: npm install -g pnpm@${{ env.PNPM_VERSION }}
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Configure npm auth
         run: |
@@ -44,8 +43,8 @@ jobs:
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
         with:
           mode: restore
-          key: pnpm-lint-${{ hashFiles('**/pnpm-lock.yaml') }}
-          path: ~/.local/share/pnpm/store
+          key: bun-lint-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
           bucket: ${{ secrets.S3_BUCKET }}
           endpoint: https://${{ secrets.S3_ENDPOINT }}
           region: ${{ secrets.S3_REGION }}
@@ -53,18 +52,18 @@ jobs:
           secret-key: ${{ secrets.S3_ACCESS_SECRET }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint
+        run: bun lint
 
       - name: Save cache
         if: always()
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
         with:
           mode: save
-          key: pnpm-lint-${{ hashFiles('**/pnpm-lock.yaml') }}
-          path: ~/.local/share/pnpm/store
+          key: bun-lint-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
           bucket: ${{ secrets.S3_BUCKET }}
           endpoint: https://${{ secrets.S3_ENDPOINT }}
           region: ${{ secrets.S3_REGION }}
@@ -85,8 +84,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm
-        run: npm install -g pnpm@${{ env.PNPM_VERSION }}
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Configure npm auth
         run: |
@@ -96,8 +95,8 @@ jobs:
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
         with:
           mode: restore
-          key: pnpm-typecheck-${{ hashFiles('**/pnpm-lock.yaml') }}
-          path: ~/.local/share/pnpm/store
+          key: bun-typecheck-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
           bucket: ${{ secrets.S3_BUCKET }}
           endpoint: https://${{ secrets.S3_ENDPOINT }}
           region: ${{ secrets.S3_REGION }}
@@ -105,18 +104,18 @@ jobs:
           secret-key: ${{ secrets.S3_ACCESS_SECRET }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Type check
-        run: pnpm exec tsc --noEmit
+        run: bun run tsc --noEmit
 
       - name: Save cache
         if: always()
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
         with:
           mode: save
-          key: pnpm-typecheck-${{ hashFiles('**/pnpm-lock.yaml') }}
-          path: ~/.local/share/pnpm/store
+          key: bun-typecheck-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
           bucket: ${{ secrets.S3_BUCKET }}
           endpoint: https://${{ secrets.S3_ENDPOINT }}
           region: ${{ secrets.S3_REGION }}
@@ -137,8 +136,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm
-        run: npm install -g pnpm@${{ env.PNPM_VERSION }}
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Configure npm auth
         run: |
@@ -148,8 +147,8 @@ jobs:
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
         with:
           mode: restore
-          key: pnpm-build-${{ hashFiles('**/pnpm-lock.yaml') }}
-          path: ~/.local/share/pnpm/store
+          key: bun-build-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
           bucket: ${{ secrets.S3_BUCKET }}
           endpoint: https://${{ secrets.S3_ENDPOINT }}
           region: ${{ secrets.S3_REGION }}
@@ -157,18 +156,18 @@ jobs:
           secret-key: ${{ secrets.S3_ACCESS_SECRET }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build
-        run: pnpm build
+        run: bun run build
 
       - name: Save cache
         if: always()
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
         with:
           mode: save
-          key: pnpm-build-${{ hashFiles('**/pnpm-lock.yaml') }}
-          path: ~/.local/share/pnpm/store
+          key: bun-build-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
           bucket: ${{ secrets.S3_BUCKET }}
           endpoint: https://${{ secrets.S3_ENDPOINT }}
           region: ${{ secrets.S3_REGION }}
@@ -195,7 +194,7 @@ jobs:
           preview: 'false'
           working-directory: '.'
           node-version: ${{ env.NODE_VERSION }}
-          package-manager: 'pnpm'
+          package-manager: 'bun'
           browser: 'chrome'
           playwright-browsers: 'chromium'
           npm-registry: 'https://forge.blackleafdigital.com/api/packages/blackleafdigital/npm/'
@@ -218,7 +217,7 @@ jobs:
           preview: 'false'
           working-directory: '.'
           node-version: ${{ env.NODE_VERSION }}
-          package-manager: 'pnpm'
+          package-manager: 'bun'
           browser: 'firefox'
           playwright-browsers: 'firefox'
           npm-registry: 'https://forge.blackleafdigital.com/api/packages/blackleafdigital/npm/'
@@ -241,7 +240,7 @@ jobs:
           preview: 'false'
           working-directory: '.'
           node-version: ${{ env.NODE_VERSION }}
-          package-manager: 'pnpm'
+          package-manager: 'bun'
           browser: 'safari'
           playwright-browsers: 'webkit'
           npm-registry: 'https://forge.blackleafdigital.com/api/packages/blackleafdigital/npm/'

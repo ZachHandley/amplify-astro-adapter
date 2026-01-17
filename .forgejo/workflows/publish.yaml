@@ -20,7 +20,6 @@ concurrency:
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '10'
 
 jobs:
   # ===========================================
@@ -62,8 +61,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm
-        run: npm install -g pnpm@${{ env.PNPM_VERSION }}
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Configure npm auth
         run: |
@@ -73,8 +72,8 @@ jobs:
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
         with:
           mode: restore
-          key: pnpm-publish-${{ hashFiles('**/pnpm-lock.yaml') }}
-          path: ~/.local/share/pnpm/store
+          key: bun-publish-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
           bucket: ${{ secrets.S3_BUCKET }}
           endpoint: https://${{ secrets.S3_ENDPOINT }}
           region: ${{ secrets.S3_REGION }}
@@ -82,10 +81,10 @@ jobs:
           secret-key: ${{ secrets.S3_ACCESS_SECRET }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build
-        run: pnpm build
+        run: bun run build
 
       - name: Update version in package.json
         run: |
@@ -93,14 +92,14 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           # Update package version (skip if already matches)
           if [ "$CURRENT_VERSION" != "$VERSION" ]; then
-            pnpm version ${VERSION} --no-git-tag-version
+            npm version ${VERSION} --no-git-tag-version
           fi
 
       - name: Publish to registry
         if: ${{ inputs.dry_run != 'true' }}
         run: |
           # Publish package
-          pnpm publish --no-git-checks --access public
+          npm publish --access public
 
       - name: Publish Dry Run
         if: ${{ inputs.dry_run == 'true' }}
@@ -112,8 +111,8 @@ jobs:
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
         with:
           mode: save
-          key: pnpm-publish-${{ hashFiles('**/pnpm-lock.yaml') }}
-          path: ~/.local/share/pnpm/store
+          key: bun-publish-${{ hashFiles('**/bun.lockb') }}
+          path: ~/.bun/install/cache
           bucket: ${{ secrets.S3_BUCKET }}
           endpoint: https://${{ secrets.S3_ENDPOINT }}
           region: ${{ secrets.S3_REGION }}
