@@ -191,7 +191,7 @@ jobs:
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
 
       - name: Install and build
-        run: bun install && bun build
+        run: bun install && bun run build
 
       - name: Run Intellitester
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
@@ -220,7 +220,7 @@ jobs:
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
 
       - name: Install and build
-        run: bun install && bun build
+        run: bun install && bun run build
 
       - name: Run Intellitester
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
@@ -249,7 +249,7 @@ jobs:
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
 
       - name: Install and build
-        run: bun install && bun build
+        run: bun install && bun run build
 
       - name: Run Intellitester
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
