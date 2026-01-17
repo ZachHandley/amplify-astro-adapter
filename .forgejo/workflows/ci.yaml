@@ -183,9 +183,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Configure npm auth
         run: |
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
+
+      - name: Install and build
+        run: bun install && bun build
 
       - name: Run Intellitester
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
@@ -206,9 +212,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Configure npm auth
         run: |
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
+
+      - name: Install and build
+        run: bun install && bun build
 
       - name: Run Intellitester
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
@@ -229,9 +241,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Configure npm auth
         run: |
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
+
+      - name: Install and build
+        run: bun install && bun build
 
       - name: Run Intellitester
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
