@@ -1,5 +1,7 @@
 import type { MiddlewareHandler } from 'astro';
-import { sessionStore, getDriverConfig } from './session-driver.js';
+// IMPORTANT: Import via package specifier to ensure same module instance as session driver
+// Using ./session-driver.js would create a separate module instance in Vite
+import { sessionStore, driverContextStorage, setDriverContext, getDriverConfig, cleanupSessionStore, type DriverContext } from 'amplify-astro-adapter/session';
 
 const SESSION_DATA_COOKIE = 'astro-session-data';
 
@@ -8,73 +10,94 @@ const SESSION_DATA_COOKIE = 'astro-session-data';
  *
  * Flow:
  * 1. BEFORE next(): Load existing session data from cookie into sessionStore
- * 2. During request: Astro's session system uses our driver (reads/writes sessionStore)
- * 3. AFTER next(): Write dirty session data from sessionStore back to cookie
+ * 2. Store cookies context in AsyncLocalStorage for driver access
+ * 3. During request: Driver writes cookies directly via ALS when setItem is called
+ * 4. AFTER next(): Cleanup sessionStore (cookie writing happens in driver now)
  *
- * This approach works because:
- * - Session ID is unique per session, used as the key
- * - The sessionStore is just a temporary buffer for ONE request
- * - Cookies are the actual persistence layer
+ * The AsyncLocalStorage approach solves the timing issue where session.persist()
+ * is called AFTER middleware completes in Astro's dev server.
  */
 export const onRequest: MiddlewareHandler = async (context, next) => {
   // BEFORE: Load existing session data from cookie into sessionStore
+  // Check sessionStore first - there may be data from a previous setItem that couldn't
+  // be written to the cookie (because response was already sent)
   const sessionId = context.cookies.get('astro-session')?.value;
   if (sessionId) {
-    const existingData = context.cookies.get(SESSION_DATA_COOKIE)?.value;
-    if (existingData) {
-      // Store the encrypted data - driver will decrypt when needed
-      sessionStore.set(sessionId, { data: existingData, dirty: false });
+    const inMemoryEntry = sessionStore.get(sessionId);
+    if (!inMemoryEntry) {
+      // No in-memory data, try loading from cookie
+      const existingData = context.cookies.get(SESSION_DATA_COOKIE)?.value;
+      if (existingData) {
+        // Store the encrypted data - driver will decrypt when needed
+        sessionStore.set(sessionId, { data: existingData, dirty: false, timestamp: Date.now() });
+      }
     }
   }
 
-  // Run the request - session.persist() happens during this via Astro's finally block
-  const response = await next();
+  // Periodically clean up old sessionStore entries (every request is fine, it's fast)
+  cleanupSessionStore();
 
-  // AFTER: Write dirty session data back to cookie
-  // Check for session ID again - it may have been created during the request
+  // Prepare context for driver to write cookies directly
+  const url = new URL(context.request.url);
+  const driverContext: DriverContext = {
+    cookies: context.cookies,
+    isSecure: context.request.url.startsWith('https://'),
+    isLocalhost: url.hostname === 'localhost' || url.hostname === '127.0.0.1',
+  };
+
+  // Set global context so driver can write cookies even AFTER middleware returns
+  // This is needed because session.persist() runs in Astro's finally block
+  setDriverContext(driverContext);
+
+  // Also run with ALS for concurrent request safety in production
+  const response = await driverContextStorage.run(driverContext, () => next());
+
+  // AFTER: Check for session and try to inject cookie into response
   const finalSessionId = context.cookies.get('astro-session')?.value;
-  if (finalSessionId) {
-    const entry = sessionStore.get(finalSessionId);
-    if (entry?.dirty) {
+
+  // For redirects (302), we need to wait for session.persist() and add cookie to response
+  // The response object can be modified before we return it
+  if (finalSessionId && (response.status === 302 || response.status === 301)) {
+    // Wait for Astro's session.persist() to complete
+    await new Promise(resolve => setImmediate(resolve));
+
+    let entry = sessionStore.get(finalSessionId);
+    if (!entry?.dirty) {
+      for (let i = 0; i < 20 && !entry?.dirty; i++) {
+        await new Promise(resolve => setTimeout(resolve, 5));
+        entry = sessionStore.get(finalSessionId);
+      }
+    }
+
+    if (entry?.dirty && entry.data) {
       const config = getDriverConfig();
       const ttl = config?.ttl ?? 604800;
       const cookieOptions = config?.cookieOptions;
 
-      if (entry.data) {
-        // Auto-detect secure from protocol
-        const isSecure = context.request.url.startsWith('https://');
+      // Build cookie string
+      const cookieParts = [
+        `${SESSION_DATA_COOKIE}=${entry.data}`,
+        `Path=${cookieOptions?.path ?? '/'}`,
+        `Max-Age=${ttl}`,
+        cookieOptions?.httpOnly !== false ? 'HttpOnly' : '',
+        (cookieOptions?.secure ?? driverContext.isSecure) ? 'Secure' : '',
+        `SameSite=${cookieOptions?.sameSite ?? 'Lax'}`,
+      ].filter(Boolean).join('; ');
 
-        // Determine domain and sameSite based on localhost
-        const url = new URL(context.request.url);
-        const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+      // Clone response with added cookie header
+      const newHeaders = new Headers(response.headers);
+      newHeaders.append('Set-Cookie', cookieParts);
 
-        let domain = cookieOptions?.domain;
-        if (domain === undefined) {
-          domain = isLocalhost ? undefined : `.${url.hostname}`;
-        }
+      console.log('[middleware] Injected session cookie into redirect response');
+      // Don't delete - keep as fallback for redirect race condition
+      // TTL cleanup will remove old entries
 
-        // Use strict for localhost (Chromium compatibility), lax for production
-        const sameSite = cookieOptions?.sameSite ?? (isLocalhost ? 'strict' : 'lax');
-
-        // Set the session data cookie
-        context.cookies.set(SESSION_DATA_COOKIE, entry.data, {
-          httpOnly: cookieOptions?.httpOnly ?? true,
-          secure: cookieOptions?.secure ?? isSecure,
-          sameSite,
-          path: cookieOptions?.path ?? '/',
-          domain,
-          maxAge: ttl,
-        });
-      } else {
-        // Empty data means delete
-        context.cookies.delete(SESSION_DATA_COOKIE, {
-          path: cookieOptions?.path ?? '/',
-          domain: cookieOptions?.domain,
-        });
-      }
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders,
+      });
     }
-    // Cleanup this request's data from the store
-    sessionStore.delete(finalSessionId);
   }
 
   return response;

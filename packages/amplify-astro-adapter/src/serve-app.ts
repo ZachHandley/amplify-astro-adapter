@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { NodeApp } from 'astro/app/node';
 import type { Options, RequestHandler } from './types.js';
+import { sessionStore, getDriverConfig } from './session-driver.js';
 
 type NodeRequest = IncomingMessage & { body?: unknown };
 
@@ -59,17 +60,90 @@ export function createAppHandler(app: NodeApp, options: Options): RequestHandler
         })
       );
 
-      await NodeApp.writeResponse(response, res);
+      const finalResponse = await injectSessionCookie(request, response);
+      await NodeApp.writeResponse(finalResponse, res);
     } else if (next) {
       return next();
     } else {
       // Unmatched route
-      const response = await app.render(req, {
+      const response = await app.render(request, {
         addCookieHeader: true,
         prerenderedErrorPageFetch,
       });
 
-      await NodeApp.writeResponse(response, res);
+      const finalResponse = await injectSessionCookie(request, response);
+      await NodeApp.writeResponse(finalResponse, res);
     }
   };
+}
+
+/**
+ * Inject session data cookie into response if needed.
+ * Astro's session.persist() runs as a microtask after app.render() returns,
+ * so we wait briefly for it to complete before checking sessionStore.
+ */
+async function injectSessionCookie(request: Request, response: Response): Promise<Response> {
+  const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
+
+  let sessionId: string | null = null;
+
+  for (const cookie of setCookieHeaders) {
+    const match = cookie.match(/^astro-session=([^;]+)/);
+    if (match) {
+      sessionId = match[1];
+      break;
+    }
+  }
+
+  if (!sessionId) {
+    return response;
+  }
+
+  // Wait for Astro's session.persist() to complete
+  // persist() runs in a finally block as a microtask after render completes
+  // We need to yield to the event loop to let it run
+  await new Promise(resolve => setImmediate(resolve));
+
+  let entry = sessionStore.get(sessionId);
+  if (!entry?.dirty) {
+    // Poll a bit longer if needed (up to 100ms)
+    for (let i = 0; i < 10 && !entry?.dirty; i++) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+      entry = sessionStore.get(sessionId);
+    }
+  }
+
+  if (!entry?.dirty) {
+    return response;
+  }
+
+  console.log('[serve-app] Injecting session cookie for', sessionId.slice(0, 8));
+
+  const config = getDriverConfig();
+  const ttl = config?.ttl ?? 604800;
+  const cookieOptions = config?.cookieOptions;
+  const url = new URL(request.url);
+  const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  const isSecure = request.url.startsWith('https://');
+
+  const cookieParts = [
+    `astro-session-data=${entry.data}`,
+    `Path=${cookieOptions?.path ?? '/'}`,
+    `Max-Age=${ttl}`,
+    cookieOptions?.httpOnly !== false ? 'HttpOnly' : '',
+    (cookieOptions?.secure ?? isSecure) ? 'Secure' : '',
+    `SameSite=${cookieOptions?.sameSite ?? 'Lax'}`,
+    !isLocalhost && cookieOptions?.domain ? `Domain=${cookieOptions.domain}` : '',
+  ].filter(Boolean).join('; ');
+
+  const newHeaders = new Headers(response.headers);
+  newHeaders.append('Set-Cookie', cookieParts);
+  // Don't delete - keep as fallback for redirect race condition
+  // TTL cleanup will remove old entries
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders,
+  });
 }
