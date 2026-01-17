@@ -10,7 +10,7 @@
         "eslint": "^9.39.2",
         "eslint-config-prettier": "^10.1.8",
         "globals": "^17.0.0",
-        "intellitester": "^0.2.41",
+        "intellitester": "^0.2.43",
         "prettier": "^3.3.0",
         "typescript-eslint": "^8.53.0",
       },
@@ -614,7 +614,7 @@
 
     "inherits": ["inherits@2.0.4", "", {}, "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ=="],
 
-    "intellitester": ["intellitester@0.2.41", "", { "dependencies": { "@llamaindex/anthropic": "^0.3.26", "@llamaindex/ollama": "^0.1.23", "@llamaindex/openai": "^0.4.22", "commander": "^14.0.2", "dotenv": "^17.2.3", "glob": "^13.0.0", "libphonenumber-js": "^1.12.33", "llamaindex": "^0.12.1", "node-appwrite": "^21.0.0", "prompts": "^2.4.2", "unique-names-generator": "^4.7.1", "yaml": "^2.8.2", "zod": "^4.1.13" }, "peerDependencies": { "playwright": "*" }, "bin": { "intellitester": "dist/cli/index.js" } }, "sha512-2oBwCAEnemZDnfv3mScJdqnGB14DASvHGDCGJcTTLmPX5oak5RR/lx3vw5D+Jjif3vnyvF0zVuWhVGKg2rUUiw=="],
+    "intellitester": ["intellitester@0.2.43", "", { "dependencies": { "@llamaindex/anthropic": "^0.3.26", "@llamaindex/ollama": "^0.1.23", "@llamaindex/openai": "^0.4.22", "commander": "^14.0.2", "dotenv": "^17.2.3", "glob": "^13.0.0", "libphonenumber-js": "^1.12.33", "llamaindex": "^0.12.1", "node-appwrite": "^21.0.0", "prompts": "^2.4.2", "unique-names-generator": "^4.7.1", "yaml": "^2.8.2", "zod": "^4.1.13" }, "peerDependencies": { "playwright": "*" }, "bin": { "intellitester": "dist/cli/index.js" } }, "sha512-T4amQ8arNkXfYjTLjUXoDzjmVhie/No4Hh1TQWz+y7oBj/01HyzhYWJjTQcBGD92l+lhoaLWOAZ+7W+YyfCkuA=="],
 
     "iron-session": ["iron-session@8.0.4", "", { "dependencies": { "cookie": "^0.7.2", "iron-webcrypto": "^1.2.1", "uncrypto": "^0.1.3" } }, "sha512-9ivNnaKOd08osD0lJ3i6If23GFS2LsxyMU8Gf/uBUEgm8/8CC1hrrCHFDpMo3IFbpBgwoo/eairRsaD3c5itxA=="],
 
