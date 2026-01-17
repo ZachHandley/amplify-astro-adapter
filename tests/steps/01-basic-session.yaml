@@ -1,0 +1,32 @@
+name: Basic session creation and read
+platform: web
+
+steps:
+  - type: navigate
+    value: /
+
+  # Verify not logged in
+  - type: assert
+    target:
+      testId: login-prompt
+
+  # Click login
+  - type: tap
+    target:
+      testId: login-link
+
+  # Fill username
+  - type: input
+    target:
+      testId: username-input
+    value: testuser_{{uuid}}
+
+  # Submit login
+  - type: tap
+    target:
+      testId: login-btn
+
+  # Verify logged in
+  - type: assert
+    target:
+      testId: welcome-msg

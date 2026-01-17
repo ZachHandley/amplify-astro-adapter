@@ -1,0 +1,18 @@
+name: amplify-astro-adapter session tests
+
+defaults:
+  timeout: 10000
+  screenshots: on-failure
+
+platforms:
+  web:
+    baseUrl: http://localhost:4321
+    browser: chromium
+    headless: true
+
+webServer:
+  auto: true
+  command: bun run dev
+  url: http://localhost:4321
+  reuseExistingServer: true
+  workdir: tests/fixtures/test-app

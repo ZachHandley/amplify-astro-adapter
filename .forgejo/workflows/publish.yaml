@@ -90,10 +90,9 @@ jobs:
       - name: Update version in package.json
         run: |
           VERSION="${{ needs.version.outputs.tag }}"
-          CURRENT_VERSION=$(node -p "require('./packages/amplify-astro-adapter/package.json').version")
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
           # Update package version (skip if already matches)
           if [ "$CURRENT_VERSION" != "$VERSION" ]; then
-            cd packages/amplify-astro-adapter
             pnpm version ${VERSION} --no-git-tag-version
           fi
 
@@ -101,7 +100,6 @@ jobs:
         if: ${{ inputs.dry_run != 'true' }}
         run: |
           # Publish package
-          cd packages/amplify-astro-adapter
           pnpm publish --no-git-checks --access public
 
       - name: Publish Dry Run

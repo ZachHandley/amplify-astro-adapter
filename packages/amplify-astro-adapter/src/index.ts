@@ -1,26 +1,35 @@
-import type { AstroConfig, AstroIntegration } from "astro";
+import type { AstroConfig, AstroIntegration } from 'astro';
 
-import { exists, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { readdir } from "node:fs/promises";
+import { existsSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readdir } from 'node:fs/promises';
+
+// Re-export session driver for convenience
+export {
+  createCookieSessionDriver,
+  generateSessionPassword,
+  type CookieSessionDriverOptions,
+  type CookieSetOptions,
+} from './session-driver.js';
 
 export interface AwsAmplifyOptions {
-  runtime?: "nodejs20.x" | "nodejs22.x";
+  runtime?: 'nodejs20.x' | 'nodejs22.x';
 }
 
-type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "unknown";
+type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun' | 'unknown';
 
 async function detectPackageManager(root: URL): Promise<PackageManager> {
   const rootPath = fileURLToPath(root);
   const entries = await readdir(rootPath);
 
-  if (entries.includes("pnpm-lock.yaml")) return "pnpm";
-  if (entries.includes("yarn.lock")) return "yarn";
-  if (entries.includes("package-lock.json")) return "npm";
-  if (entries.includes("bun.lockb")) return "bun";
+  if (entries.includes('pnpm-lock.yaml')) return 'pnpm';
+  if (entries.includes('yarn.lock')) return 'yarn';
+  if (entries.includes('package-lock.json')) return 'npm';
+  if (entries.includes('bun.lockb')) return 'bun';
 
-  return "unknown";
+  return 'unknown';
 }
 
 function getAmplifyYaml(packageManager: PackageManager): string {
@@ -96,7 +105,7 @@ frontend:
       - '**/*'
   cache:
     paths:
-      - .npm/**/*`
+      - .npm/**/*`,
   };
 
   return configs[packageManager] || configs.unknown;
@@ -104,104 +113,130 @@ frontend:
 
 export default function awsAmplify(options: AwsAmplifyOptions = {}): AstroIntegration {
   let _config: AstroConfig;
-  const { runtime = "nodejs20.x" } = options;
+  const { runtime = 'nodejs20.x' } = options;
 
   return {
-    name: "amplify-astro-adapter",
+    name: 'amplify-astro-adapter',
     hooks: {
-      "astro:config:setup": async ({ config, updateConfig, logger }) => {
+      'astro:config:setup': async ({ config, updateConfig, logger, addMiddleware }) => {
         // Generate amplify.yml if it doesn't exist
-        const amplifyYmlPath = join(fileURLToPath(config.root), "amplify.yml");
-        const ymlExists = await exists(amplifyYmlPath);
+        const amplifyYmlPath = join(fileURLToPath(config.root), 'amplify.yml');
+        const ymlExists = existsSync(amplifyYmlPath);
 
         if (!ymlExists) {
           const packageManager = await detectPackageManager(config.root);
           const yamlContent = getAmplifyYaml(packageManager);
           await writeFile(amplifyYmlPath, yamlContent);
-          logger.info(`Created amplify.yml for ${packageManager} - commit this file to your repository!`);
+          logger.info(
+            `Created amplify.yml for ${packageManager} - commit this file to your repository!`
+          );
         }
 
-        updateConfig({
-          build: {
-            client: new URL(
-              `./.amplify-hosting/static${config.base}`,
-              config.root,
-            ),
-            server: new URL("./.amplify-hosting/compute/default/", config.root),
-          },
-        });
+        // Check if we're using our session driver (auto or manual)
+        const isServerMode = config.output === 'server';
+        const hasNoDriver = !config.session?.driver;
+        const usesOurDriver = config.session?.driver === 'amplify-astro-adapter/session';
+
+        // Add middleware if using our session driver
+        if (isServerMode && (hasNoDriver || usesOurDriver)) {
+          addMiddleware({
+            entrypoint: 'amplify-astro-adapter/middleware',
+            order: 'pre',
+          });
+        }
+
+        // Auto-configure session driver if none specified
+        if (isServerMode && hasNoDriver) {
+          logger.info('Auto-configuring cookie-based session driver for serverless environment');
+
+          updateConfig({
+            build: {
+              client: new URL(`./.amplify-hosting/static${config.base}`, config.root),
+              server: new URL('./.amplify-hosting/compute/default/', config.root),
+            },
+            session: {
+              driver: 'amplify-astro-adapter/session',
+            },
+          });
+        } else {
+          updateConfig({
+            build: {
+              client: new URL(`./.amplify-hosting/static${config.base}`, config.root),
+              server: new URL('./.amplify-hosting/compute/default/', config.root),
+            },
+          });
+        }
       },
-      "astro:config:done": ({ config, setAdapter }) => {
+      'astro:config:done': ({ config, setAdapter }) => {
         setAdapter({
-          name: "amplify-astro-adapter",
-          serverEntrypoint: "amplify-astro-adapter/server",
+          name: 'amplify-astro-adapter',
+          serverEntrypoint: 'amplify-astro-adapter/server',
           supportedAstroFeatures: {
-            serverOutput: "stable",
-            hybridOutput: "stable",
-            staticOutput: "stable",
-            sharpImageService: "stable",
-            envGetSecret: "stable",
+            serverOutput: 'stable',
+            hybridOutput: 'stable',
+            staticOutput: 'stable',
+            sharpImageService: 'stable',
+            envGetSecret: 'stable',
           },
           args: {
+            mode: 'standalone',
             client: config.build.client?.toString(),
             server: config.build.server?.toString(),
             host: config.server.host,
             port: 3000,
             assets: config.build.assets,
+            experimentalStaticHeaders: false,
           },
         });
 
         _config = config;
       },
-      "astro:build:done": async () => {
+      'astro:build:done': async () => {
         const deployManifestConfig = {
           version: 1,
           routes: [
             {
               path: `${_config.base}assets/*`,
               target: {
-                kind: "Static",
+                kind: 'Static',
               },
             },
             {
               path: `${_config.base}*.*`,
               target: {
-                kind: "Static",
+                kind: 'Static',
               },
               fallback: {
-                kind: "Compute",
-                src: "default",
+                kind: 'Compute',
+                src: 'default',
               },
             },
             {
-              path: "/*",
+              path: '/*',
               target: {
-                kind: "Compute",
-                src: "default",
+                kind: 'Compute',
+                src: 'default',
               },
             },
           ],
           computeResources: [
             {
-              name: "default",
-              entrypoint: "entry.mjs",
+              name: 'default',
+              entrypoint: 'entry.mjs',
               runtime,
             },
           ],
           framework: {
-            name: "astro",
-            version: "4.0.0",
+            name: 'astro',
+            version: '4.0.0',
           },
         };
 
         const functionsConfigPath = join(
           fileURLToPath(_config.root),
-          "/.amplify-hosting/deploy-manifest.json",
+          '/.amplify-hosting/deploy-manifest.json'
         );
-        await writeFile(
-          functionsConfigPath,
-          JSON.stringify(deployManifestConfig),
-        );
+        await writeFile(functionsConfigPath, JSON.stringify(deployManifestConfig));
       },
     },
   };

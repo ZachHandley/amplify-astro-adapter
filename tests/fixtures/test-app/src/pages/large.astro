@@ -1,0 +1,27 @@
+---
+// Create ~5KB session to test chunking
+let largeData = await Astro.session?.get('largeData') as string | undefined;
+if (!largeData) {
+  largeData = 'x'.repeat(5000);
+  await Astro.session?.set('largeData', largeData);
+}
+
+const size = largeData?.length || 0;
+---
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Large Session Test</title>
+</head>
+<body>
+  <h1>Large Session Test</h1>
+  <p data-testid="session-size">Session size: {size} bytes</p>
+  {size > 4000 ? (
+    <p data-testid="chunked">Session is chunked across multiple cookies!</p>
+  ) : (
+    <p data-testid="not-chunked">Session fits in one cookie</p>
+  )}
+  <a href="/" data-testid="home-link">Home</a>
+</body>
+</html>

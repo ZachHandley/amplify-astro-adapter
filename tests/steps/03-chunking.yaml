@@ -1,0 +1,26 @@
+name: Large session uses multi-cookie chunking
+platform: web
+
+steps:
+  # Go directly to large session page
+  - type: navigate
+    value: /large
+
+  # Verify chunking message appears
+  - type: assert
+    target:
+      testId: chunked
+
+  # Navigate away and back
+  - type: tap
+    target:
+      testId: home-link
+
+  - type: tap
+    target:
+      testId: large-link
+
+  # Verify large session persisted
+  - type: assert
+    target:
+      testId: chunked

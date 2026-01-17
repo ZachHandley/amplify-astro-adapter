@@ -1,0 +1,30 @@
+name: Session persists after page reload
+platform: web
+
+steps:
+  # Login
+  - type: navigate
+    value: /login
+
+  - type: input
+    target:
+      testId: username-input
+    value: reload_test_user
+
+  - type: tap
+    target:
+      testId: login-btn
+
+  # Verify logged in
+  - type: assert
+    target:
+      testId: welcome-msg
+
+  # Reload the page
+  - type: navigate
+    value: /
+
+  # Verify session still there
+  - type: assert
+    target:
+      testId: welcome-msg

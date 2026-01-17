@@ -1,0 +1,6 @@
+name: Chunking Workflow
+platform: web
+
+tests:
+  - file: steps/03-chunking.yaml
+    id: chunking

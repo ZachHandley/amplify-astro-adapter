@@ -1,0 +1,33 @@
+name: Amplify Astro Adapter Session Tests
+platform: web
+
+config:
+  web:
+    baseUrl: http://localhost:4321
+    browser: chromium
+    headless: true
+  webServer:
+    command: bun run dev
+    url: http://localhost:4321
+    reuseExistingServer: true
+    timeout: 30000
+    workdir: fixtures/test-app
+
+on_failure: fail
+cleanup_on_failure: true
+
+workflows:
+  - file: 01-basic-session.test.yaml
+    id: login
+  - file: 02-persistence.test.yaml
+    id: persistence
+    depends_on: [login]
+  - file: 03-chunking.test.yaml
+    id: chunking
+    depends_on: [login]
+  - file: 04-logout.test.yaml
+    id: logout
+    depends_on: [login]
+  - file: 05-reload.test.yaml
+    id: reload
+    depends_on: [login]

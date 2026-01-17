@@ -1,0 +1,28 @@
+---
+const username = await Astro.session?.get('username');
+---
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session Test App</title>
+</head>
+<body>
+  <h1>Amplify Adapter Session Test</h1>
+  {username ? (
+    <>
+      <p data-testid="welcome-msg">Welcome, {username}!</p>
+      <form method="POST" action="/api/logout" style="display:inline">
+        <button type="submit" data-testid="logout-btn">Logout</button>
+      </form>
+    </>
+  ) : (
+    <>
+      <p data-testid="login-prompt">Please log in</p>
+      <a href="/login" data-testid="login-link">Login</a>
+    </>
+  )}
+  <br>
+  <a href="/large" data-testid="large-link">Large Session Test</a>
+</body>
+</html>

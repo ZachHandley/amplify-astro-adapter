@@ -1,0 +1,36 @@
+name: Session persists across page navigation
+platform: web
+
+steps:
+  # Login first
+  - type: navigate
+    value: /login
+
+  - type: input
+    target:
+      testId: username-input
+    value: persist_test_user
+
+  - type: tap
+    target:
+      testId: login-btn
+
+  # Navigate to large session page
+  - type: tap
+    target:
+      testId: large-link
+
+  # Verify session still there
+  - type: assert
+    target:
+      testId: session-size
+
+  # Navigate back home
+  - type: tap
+    target:
+      testId: home-link
+
+  # Verify session persisted
+  - type: assert
+    target:
+      testId: welcome-msg

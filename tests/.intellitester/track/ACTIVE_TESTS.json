@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "updatedAt": "2026-01-17T00:14:43.664Z",
+  "sessions": {
+    "b7d6414d-8611-4892-9954-2fc2061dba96": {
+      "sessionId": "b7d6414d-8611-4892-9954-2fc2061dba96",
+      "trackFile": "/home/zach/github/amplify-astro-adapter/tests/.intellitester/track/TEST_SESSION_b7d6414d-8611-4892-9954-2fc2061dba96.jsonl",
+      "startedAt": "2026-01-16T23:16:38.287Z",
+      "lastUpdated": "2026-01-16T23:16:38.287Z",
+      "cwd": "/home/zach/github/amplify-astro-adapter/tests"
+    },
+    "86c9f6cf-4716-444d-a491-aa1f0f94cc26": {
+      "sessionId": "86c9f6cf-4716-444d-a491-aa1f0f94cc26",
+      "trackFile": "/home/zach/github/amplify-astro-adapter/tests/.intellitester/track/TEST_SESSION_86c9f6cf-4716-444d-a491-aa1f0f94cc26.jsonl",
+      "startedAt": "2026-01-16T23:35:10.465Z",
+      "lastUpdated": "2026-01-16T23:35:10.465Z",
+      "cwd": "/home/zach/github/amplify-astro-adapter/tests"
+    },
+    "287a1d16-ab73-4fc4-9796-7ce4f381180c": {
+      "sessionId": "287a1d16-ab73-4fc4-9796-7ce4f381180c",
+      "trackFile": "/home/zach/github/amplify-astro-adapter/tests/.intellitester/track/TEST_SESSION_287a1d16-ab73-4fc4-9796-7ce4f381180c.jsonl",
+      "startedAt": "2026-01-16T23:48:54.452Z",
+      "lastUpdated": "2026-01-16T23:48:54.452Z",
+      "cwd": "/home/zach/github/amplify-astro-adapter/tests"
+    },
+    "b39513a8-0ab6-474d-b3e5-c75068706c83": {
+      "sessionId": "b39513a8-0ab6-474d-b3e5-c75068706c83",
+      "trackFile": "/home/zach/github/amplify-astro-adapter/tests/.intellitester/track/TEST_SESSION_b39513a8-0ab6-474d-b3e5-c75068706c83.jsonl",
+      "startedAt": "2026-01-16T23:51:04.819Z",
+      "lastUpdated": "2026-01-16T23:51:04.819Z",
+      "cwd": "/home/zach/github/amplify-astro-adapter/tests"
+    },
+    "e8ef0745-dad3-47bd-b684-ef93d42af504": {
+      "sessionId": "e8ef0745-dad3-47bd-b684-ef93d42af504",
+      "trackFile": "/home/zach/github/amplify-astro-adapter/tests/.intellitester/track/TEST_SESSION_e8ef0745-dad3-47bd-b684-ef93d42af504.jsonl",
+      "startedAt": "2026-01-17T00:14:43.664Z",
+      "lastUpdated": "2026-01-17T00:14:43.664Z",
+      "cwd": "/home/zach/github/amplify-astro-adapter/tests"
+    }
+  }
+}

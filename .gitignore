@@ -144,3 +144,4 @@ vite.config.ts.timestamp-*
 # Amplify Hosting build output (generated during build)
 .amplify-hosting/
 
+.intellitester/track

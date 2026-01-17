@@ -1,0 +1,11 @@
+{
+  "name": "amplify-astro-session-test-app",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev"
+  },
+  "dependencies": {
+    "astro": "^5.7.0",
+    "amplify-astro-adapter": "workspace:*"
+  }
+}

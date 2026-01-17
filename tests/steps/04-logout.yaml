@@ -1,0 +1,31 @@
+name: Logout clears session
+platform: web
+
+steps:
+  # Login
+  - type: navigate
+    value: /login
+
+  - type: input
+    target:
+      testId: username-input
+    value: logout_test_user
+
+  - type: tap
+    target:
+      testId: login-btn
+
+  # Verify logged in
+  - type: assert
+    target:
+      testId: welcome-msg
+
+  # Logout
+  - type: tap
+    target:
+      testId: logout-btn
+
+  # Verify logged out
+  - type: assert
+    target:
+      testId: login-prompt

@@ -1,0 +1,6 @@
+name: Logout Workflow
+platform: web
+
+tests:
+  - file: steps/04-logout.yaml
+    id: logout

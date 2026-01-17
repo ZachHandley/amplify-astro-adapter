@@ -1,0 +1,6 @@
+name: Basic Session Workflow
+platform: web
+
+tests:
+  - file: steps/01-basic-session.yaml
+    id: basic-session

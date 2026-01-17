@@ -1,0 +1,6 @@
+name: Persistence Workflow
+platform: web
+
+tests:
+  - file: steps/02-persistence.yaml
+    id: persistence

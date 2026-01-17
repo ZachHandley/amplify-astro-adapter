@@ -1,8 +1,10 @@
 {
   "name": "amplify-astro-adapter",
-  "version": "0.3.0",
-  "private": false,
+  "version": "0.1.0",
   "description": "Deploy Astro to AWS Amplify (SSR) - extending @astrojs/node",
+  "type": "module",
+  "license": "MIT",
+  "author": "Zach Handley <zachhandley@gmail.com>",
   "keywords": [
     "astro",
     "withastro",
@@ -11,21 +13,42 @@
     "amplify",
     "ssr"
   ],
-  "license": "MIT",
-  "author": "Zach Handley <zachhandley@gmail.com>",
-  "type": "module",
   "publishConfig": {
     "access": "public"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./server": "./src/server.ts",
-    "./session": "./src/session.ts"
+    ".": "./dist/index.js",
+    "./server": "./dist/server.js",
+    "./session": "./dist/session-driver.js",
+    "./middleware": "./dist/middleware.js"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@astrojs/node": "^9.5.1"
+    "@astrojs/internal-helpers": "^0.7.5",
+    "cookie": "^1.1.1",
+    "iron-session": "^8.0.4",
+    "send": "^1.2.1",
+    "server-destroy": "^1.0.1",
+    "unstorage": "^1.17.0"
   },
   "peerDependencies": {
     "astro": "^4.0.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "@types/cookie": "^1.0.0",
+    "@types/node": "^22.0.0",
+    "@types/send": "^0.17.4",
+    "@types/server-destroy": "^1.0.4",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

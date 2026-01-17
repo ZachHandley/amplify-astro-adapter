@@ -1,0 +1,6 @@
+name: Reload Workflow
+platform: web
+
+tests:
+  - file: steps/05-reload.yaml
+    id: reload
