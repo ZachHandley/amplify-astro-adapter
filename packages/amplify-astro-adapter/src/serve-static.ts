@@ -32,7 +32,9 @@ export function createStaticHandler(app: NodeApp, options: Options) {
       let isDirectory = false;
       try {
         isDirectory = fs.lstatSync(filePath).isDirectory();
-      } catch {}
+      } catch {
+        // File doesn't exist, isDirectory stays false
+      }
 
       const { trailingSlash = 'ignore' } = options;
 

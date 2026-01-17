@@ -61,8 +61,9 @@ function readHeadersJson(outDir: string | URL): NodeAppHeadersJson | undefined {
     const content = readFileSync(headersUrl, 'utf-8');
     try {
       headersMap = JSON.parse(content) as NodeAppHeadersJson;
-    } catch (e: any) {
-      console.error('[amplify-astro-adapter] Error parsing _headers.json: ' + e.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.error('[amplify-astro-adapter] Error parsing _headers.json: ' + message);
       console.error('[amplify-astro-adapter] Please make sure your _headers.json is valid JSON.');
     }
   }
