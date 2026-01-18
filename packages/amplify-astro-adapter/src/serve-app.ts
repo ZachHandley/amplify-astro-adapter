@@ -8,7 +8,8 @@ type NodeRequest = IncomingMessage & { body?: unknown };
 
 /**
  * Create a request handler for the Astro app.
- * Session handling is done by middleware, not here.
+ * Session cookie handling is primarily done by middleware.
+ * This handler provides a fallback for direct responses (e.g., API routes with redirects).
  */
 export function createAppHandler(app: NodeApp, options: Options): RequestHandler {
   const als = new AsyncLocalStorage<string>();
@@ -60,7 +61,7 @@ export function createAppHandler(app: NodeApp, options: Options): RequestHandler
         })
       );
 
-      const finalResponse = await injectSessionCookie(request, response);
+      const finalResponse = await injectSessionCookieIfNeeded(request, response);
       await NodeApp.writeResponse(finalResponse, res);
     } else if (next) {
       return next();
@@ -71,7 +72,7 @@ export function createAppHandler(app: NodeApp, options: Options): RequestHandler
         prerenderedErrorPageFetch,
       });
 
-      const finalResponse = await injectSessionCookie(request, response);
+      const finalResponse = await injectSessionCookieIfNeeded(request, response);
       await NodeApp.writeResponse(finalResponse, res);
     }
   };
@@ -79,10 +80,12 @@ export function createAppHandler(app: NodeApp, options: Options): RequestHandler
 
 /**
  * Inject session data cookie into response if needed.
- * Astro's session.persist() runs as a microtask after app.render() returns,
- * so we wait briefly for it to complete before checking sessionStore.
+ * Waits for one microtask tick to allow Astro's session.persist() to complete,
+ * then checks if session data needs to be written to cookie.
+ * If not available yet, middleware will handle it on the next request
+ * via deferred cookie sync.
  */
-async function injectSessionCookie(request: Request, response: Response): Promise<Response> {
+async function injectSessionCookieIfNeeded(request: Request, response: Response): Promise<Response> {
   const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
 
   let sessionId: string | null = null;
@@ -99,25 +102,16 @@ async function injectSessionCookie(request: Request, response: Response): Promis
     return response;
   }
 
-  // Wait for Astro's session.persist() to complete
-  // persist() runs in a finally block as a microtask after render completes
-  // We need to yield to the event loop to let it run
+  // Wait for next event loop tick to allow Astro's session.persist() to complete
+  // persist() runs in a finally block after render completes
   await new Promise((resolve) => setImmediate(resolve));
 
-  let entry = sessionStore.get(sessionId);
-  if (!entry?.dirty) {
-    // Poll a bit longer if needed (up to 100ms)
-    for (let i = 0; i < 10 && !entry?.dirty; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      entry = sessionStore.get(sessionId);
-    }
-  }
+  const entry = sessionStore.get(sessionId);
 
-  if (!entry?.dirty) {
+  // Only inject if we have dirty data ready
+  if (!entry?.dirty || !entry.data) {
     return response;
   }
-
-  console.log('[serve-app] Injecting session cookie for', sessionId.slice(0, 8));
 
   const config = getDriverConfig();
   const ttl = config?.ttl ?? 604800;
@@ -140,8 +134,9 @@ async function injectSessionCookie(request: Request, response: Response): Promis
 
   const newHeaders = new Headers(response.headers);
   newHeaders.append('Set-Cookie', cookieParts);
-  // Don't delete - keep as fallback for redirect race condition
-  // TTL cleanup will remove old entries
+
+  // Mark as clean after writing cookie
+  sessionStore.set(sessionId, { ...entry, dirty: false, timestamp: Date.now() });
 
   return new Response(response.body, {
     status: response.status,
