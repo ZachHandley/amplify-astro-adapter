@@ -26,6 +26,10 @@ steps:
     target:
       testId: login-btn
 
+  # Debug: capture page state before assertion
+  - type: screenshot
+    name: debug-before-welcome.png
+
   # Verify logged in
   - type: assert
     target:

@@ -100,15 +100,16 @@ export interface CookieSessionDriverOptions {
 interface ResolvedConfig {
   password: string;
   ttl: number;
-  cookieOptions: Required<Pick<CookieSetOptions, 'secure' | 'sameSite' | 'httpOnly' | 'path'>> &
-    Pick<CookieSetOptions, 'domain' | 'maxAge'>;
+  cookieOptions: Required<Pick<CookieSetOptions, 'sameSite' | 'httpOnly' | 'path'>> &
+    Pick<CookieSetOptions, 'secure' | 'domain' | 'maxAge'>;
 }
 
 const DEFAULTS: ResolvedConfig = {
   password: '',
   ttl: 604800, // 7 days
   cookieOptions: {
-    secure: true,
+    // secure is intentionally omitted - auto-detected from request protocol
+    // (localhost/HTTP = false, production/HTTPS = true)
     sameSite: 'lax',
     httpOnly: true,
     path: '/',
