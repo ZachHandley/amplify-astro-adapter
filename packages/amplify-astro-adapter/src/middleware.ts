@@ -25,19 +25,23 @@ const SESSION_DATA_COOKIE = 'astro-session-data';
  * is called AFTER middleware completes in Astro's dev server.
  */
 export const onRequest: MiddlewareHandler = async (context, next) => {
-  // BEFORE: Load existing session data from cookie into sessionStore
-  // Check sessionStore first - there may be data from a previous setItem that couldn't
-  // be written to the cookie (because response was already sent)
+  // BEFORE: Handle session data synchronization
+  // Check if we have session ID but missing session data cookie
+  // This happens when the previous request set session data but couldn't write the cookie
   const sessionId = context.cookies.get('astro-session')?.value;
+  const existingDataCookie = context.cookies.get(SESSION_DATA_COOKIE)?.value;
+  let needsCookieSync = false;
+
   if (sessionId) {
     const inMemoryEntry = sessionStore.get(sessionId);
-    if (!inMemoryEntry) {
-      // No in-memory data, try loading from cookie
-      const existingData = context.cookies.get(SESSION_DATA_COOKIE)?.value;
-      if (existingData) {
-        // Store the encrypted data - driver will decrypt when needed
-        sessionStore.set(sessionId, { data: existingData, dirty: false, timestamp: Date.now() });
-      }
+
+    if (inMemoryEntry?.dirty && !existingDataCookie) {
+      // We have in-memory data that wasn't written to cookie yet
+      // This is the deferred cookie sync case (happens after redirect)
+      needsCookieSync = true;
+    } else if (!inMemoryEntry && existingDataCookie) {
+      // No in-memory data, but cookie exists - load from cookie
+      sessionStore.set(sessionId, { data: existingDataCookie, dirty: false, timestamp: Date.now() });
     }
   }
 
@@ -59,37 +63,17 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // Also run with ALS for concurrent request safety in production
   const response = await driverContextStorage.run(driverContext, () => next());
 
-  // AFTER: Check for session and try to inject cookie into response
-  const finalSessionId = context.cookies.get('astro-session')?.value;
-
-  // For redirects (302), we need to wait for session.persist() and add cookie to response
-  // The response object can be modified before we return it
-  if (finalSessionId && (response.status === 302 || response.status === 301)) {
-    // Wait for Astro's session.persist() to complete
-    await new Promise((resolve) => setImmediate(resolve));
-
-    let entry = sessionStore.get(finalSessionId);
-    if (!entry?.dirty) {
-      for (let i = 0; i < 20 && !entry?.dirty; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 5));
-        entry = sessionStore.get(finalSessionId);
-      }
-    }
-
-    if (entry?.dirty && entry.data) {
+  // Deferred cookie sync: If we detected session data in sessionStore without a cookie,
+  // inject the cookie now (on the follow-up request after a redirect)
+  if (needsCookieSync && sessionId) {
+    const entry = sessionStore.get(sessionId);
+    if (entry?.data) {
       const config = getDriverConfig();
       const ttl = config?.ttl ?? 604800;
       const cookieOptions = config?.cookieOptions;
-
-      // Build cookie string
-      // For localhost: no Domain (host-only cookie)
-      // For production: .domain.com (include subdomains)
-      const url = new URL(context.request.url);
-      const hostname = url.hostname;
+      const hostname = new URL(context.request.url).hostname;
       const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-      const cookieDomain = isLocalhost
-        ? undefined
-        : '.' + hostname.replace(/^www\./, '');
+      const cookieDomain = isLocalhost ? undefined : '.' + hostname.replace(/^www\./, '');
 
       const cookieParts = [
         `${SESSION_DATA_COOKIE}=${entry.data}`,
@@ -103,13 +87,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         .filter(Boolean)
         .join('; ');
 
-      // Clone response with added cookie header
       const newHeaders = new Headers(response.headers);
       newHeaders.append('Set-Cookie', cookieParts);
 
-      console.log('[middleware] Injected session cookie into redirect response');
-      // Don't delete - keep as fallback for redirect race condition
-      // TTL cleanup will remove old entries
+      // Mark as not dirty since we're writing the cookie
+      sessionStore.set(sessionId, { ...entry, dirty: false });
 
       return new Response(response.body, {
         status: response.status,

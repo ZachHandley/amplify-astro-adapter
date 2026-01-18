@@ -222,20 +222,17 @@ export function createCookieSessionDriver(options: CookieSessionDriverOptions = 
     },
 
     async setItem(sessionId: string, value: string): Promise<void> {
-      console.log('[session-driver] setItem:', sessionId.slice(0, 8));
-
       const dataToSeal: SessionDataWrapper = { _d: value };
       const sealed = await sealData(dataToSeal, {
         password: config.password,
         ttl: config.ttl,
       });
 
-      // Store in sessionStore - adapter will inject cookie into response
+      // Store in sessionStore - middleware will sync to cookie on next request
       sessionStore.set(sessionId, { data: sealed, dirty: true, timestamp: Date.now() });
     },
 
     async removeItem(sessionId: string): Promise<void> {
-      console.log('[session-driver] removeItem:', sessionId.slice(0, 8));
       sessionStore.set(sessionId, { data: '', dirty: true, timestamp: Date.now() });
     },
 
