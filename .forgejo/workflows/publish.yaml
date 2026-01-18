@@ -87,6 +87,7 @@ jobs:
         run: bun run build
 
       - name: Update version in package.json
+        working-directory: packages/amplify-astro-adapter
         run: |
           VERSION="${{ needs.version.outputs.tag }}"
           CURRENT_VERSION=$(node -p "require('./package.json').version")
@@ -97,12 +98,14 @@ jobs:
 
       - name: Publish to registry
         if: ${{ inputs.dry_run != 'true' }}
+        working-directory: packages/amplify-astro-adapter
         run: |
           # Publish package
           npm publish --access public
 
       - name: Publish Dry Run
         if: ${{ inputs.dry_run == 'true' }}
+        working-directory: packages/amplify-astro-adapter
         run: |
           echo "DRY RUN - Would publish amplify-astro-adapter@${{ needs.version.outputs.tag }}"
 
