@@ -86,6 +86,9 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Copy README to package
+        run: cp README.md packages/amplify-astro-adapter/
+
       - name: Update version in package.json
         working-directory: packages/amplify-astro-adapter
         run: |
