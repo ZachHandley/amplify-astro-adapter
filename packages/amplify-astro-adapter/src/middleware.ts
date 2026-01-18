@@ -44,7 +44,11 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       needsCookieSync = true;
     } else if (!inMemoryEntry && existingDataCookie) {
       // No in-memory data, but cookie exists - load from cookie
-      sessionStore.set(sessionId, { data: existingDataCookie, dirty: false, timestamp: Date.now() });
+      sessionStore.set(sessionId, {
+        data: existingDataCookie,
+        dirty: false,
+        timestamp: Date.now(),
+      });
     }
   }
 

@@ -9,8 +9,11 @@ import { createHash } from 'node:crypto';
  */
 type SessionStoreEntry = { data: string; dirty: boolean; timestamp: number };
 const SESSION_STORE_KEY = '__amplify_session_store__';
-const processAny = process as typeof process & { [SESSION_STORE_KEY]?: Map<string, SessionStoreEntry> };
-export const sessionStore: Map<string, SessionStoreEntry> = (processAny[SESSION_STORE_KEY] ??= new Map());
+const processAny = process as typeof process & {
+  [SESSION_STORE_KEY]?: Map<string, SessionStoreEntry>;
+};
+export const sessionStore: Map<string, SessionStoreEntry> = (processAny[SESSION_STORE_KEY] ??=
+  new Map());
 
 // TTL for sessionStore entries (5 minutes)
 const SESSION_STORE_TTL_MS = 5 * 60 * 1000;

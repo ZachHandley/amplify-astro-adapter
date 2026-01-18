@@ -85,7 +85,10 @@ export function createAppHandler(app: NodeApp, options: Options): RequestHandler
  * If not available yet, middleware will handle it on the next request
  * via deferred cookie sync.
  */
-async function injectSessionCookieIfNeeded(request: Request, response: Response): Promise<Response> {
+async function injectSessionCookieIfNeeded(
+  request: Request,
+  response: Response
+): Promise<Response> {
   const setCookieHeaders = response.headers.getSetCookie?.() ?? [];
 
   let sessionId: string | null = null;
