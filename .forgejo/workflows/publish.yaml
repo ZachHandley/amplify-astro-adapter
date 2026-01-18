@@ -96,7 +96,8 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           # Update package version (skip if already matches)
           if [ "$CURRENT_VERSION" != "$VERSION" ]; then
-            npm version ${VERSION} --no-git-tag-version
+            # Use node to update version (npm version doesn't work with workspace protocol)
+            node -e "const pkg = require('./package.json'); pkg.version = '${VERSION}'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n')"
           fi
 
       - name: Publish to registry
