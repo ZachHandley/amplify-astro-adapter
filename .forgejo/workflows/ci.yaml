@@ -197,11 +197,6 @@ jobs:
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
         with:
           test-file: tests/
-          preview: 'false'
-          working-directory: '.'
-          node-version: ${{ env.NODE_VERSION }}
-          package-manager: 'bun'
-          browser: 'chrome'
           playwright-browsers: 'chromium'
           npm-registry: 'https://forge.blackleafdigital.com/api/packages/blackleafdigital/npm/'
           npm-token: ${{ secrets.FORGEJO_ACTIONS_TOKEN }}
@@ -226,10 +221,6 @@ jobs:
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
         with:
           test-file: tests/
-          preview: 'false'
-          working-directory: '.'
-          node-version: ${{ env.NODE_VERSION }}
-          package-manager: 'bun'
           browser: 'firefox'
           playwright-browsers: 'firefox'
           npm-registry: 'https://forge.blackleafdigital.com/api/packages/blackleafdigital/npm/'
@@ -255,11 +246,7 @@ jobs:
         uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
         with:
           test-file: tests/
-          preview: 'false'
-          working-directory: '.'
-          node-version: ${{ env.NODE_VERSION }}
-          package-manager: 'bun'
-          browser: 'safari'
+          browser: 'webkit'
           playwright-browsers: 'webkit'
           npm-registry: 'https://forge.blackleafdigital.com/api/packages/blackleafdigital/npm/'
           npm-token: ${{ secrets.FORGEJO_ACTIONS_TOKEN }}

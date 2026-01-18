@@ -102,13 +102,13 @@ async function injectSessionCookie(request: Request, response: Response): Promis
   // Wait for Astro's session.persist() to complete
   // persist() runs in a finally block as a microtask after render completes
   // We need to yield to the event loop to let it run
-  await new Promise(resolve => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
 
   let entry = sessionStore.get(sessionId);
   if (!entry?.dirty) {
     // Poll a bit longer if needed (up to 100ms)
     for (let i = 0; i < 10 && !entry?.dirty; i++) {
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       entry = sessionStore.get(sessionId);
     }
   }
@@ -134,7 +134,9 @@ async function injectSessionCookie(request: Request, response: Response): Promis
     (cookieOptions?.secure ?? isSecure) ? 'Secure' : '',
     `SameSite=${cookieOptions?.sameSite ?? 'Lax'}`,
     !isLocalhost && cookieOptions?.domain ? `Domain=${cookieOptions.domain}` : '',
-  ].filter(Boolean).join('; ');
+  ]
+    .filter(Boolean)
+    .join('; ');
 
   const newHeaders = new Headers(response.headers);
   newHeaders.append('Set-Cookie', cookieParts);

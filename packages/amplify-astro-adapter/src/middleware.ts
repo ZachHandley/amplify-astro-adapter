@@ -1,7 +1,14 @@
 import type { MiddlewareHandler } from 'astro';
 // IMPORTANT: Import via package specifier to ensure same module instance as session driver
 // Using ./session-driver.js would create a separate module instance in Vite
-import { sessionStore, driverContextStorage, setDriverContext, getDriverConfig, cleanupSessionStore, type DriverContext } from 'amplify-astro-adapter/session';
+import {
+  sessionStore,
+  driverContextStorage,
+  setDriverContext,
+  getDriverConfig,
+  cleanupSessionStore,
+  type DriverContext,
+} from 'amplify-astro-adapter/session';
 
 const SESSION_DATA_COOKIE = 'astro-session-data';
 
@@ -59,12 +66,12 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
   // The response object can be modified before we return it
   if (finalSessionId && (response.status === 302 || response.status === 301)) {
     // Wait for Astro's session.persist() to complete
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
 
     let entry = sessionStore.get(finalSessionId);
     if (!entry?.dirty) {
       for (let i = 0; i < 20 && !entry?.dirty; i++) {
-        await new Promise(resolve => setTimeout(resolve, 5));
+        await new Promise((resolve) => setTimeout(resolve, 5));
         entry = sessionStore.get(finalSessionId);
       }
     }
@@ -82,7 +89,9 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         cookieOptions?.httpOnly !== false ? 'HttpOnly' : '',
         (cookieOptions?.secure ?? driverContext.isSecure) ? 'Secure' : '',
         `SameSite=${cookieOptions?.sameSite ?? 'Lax'}`,
-      ].filter(Boolean).join('; ');
+      ]
+        .filter(Boolean)
+        .join('; ');
 
       // Clone response with added cookie header
       const newHeaders = new Headers(response.headers);

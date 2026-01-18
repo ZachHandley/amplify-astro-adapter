@@ -43,8 +43,9 @@ const SESSION_STORE_KEY = Symbol.for('amplify-astro-adapter-session-store');
 
 type SessionStoreEntry = { data: string; dirty: boolean; timestamp: number };
 
-export const sessionStore: Map<string, SessionStoreEntry> =
-  ((globalThis as Record<symbol, Map<string, SessionStoreEntry> | undefined>)[SESSION_STORE_KEY] ??= new Map());
+export const sessionStore: Map<string, SessionStoreEntry> = ((
+  globalThis as Record<symbol, Map<string, SessionStoreEntry> | undefined>
+)[SESSION_STORE_KEY] ??= new Map());
 
 // TTL for sessionStore entries (5 minutes) - entries older than this can be cleaned up
 const SESSION_STORE_TTL_MS = 5 * 60 * 1000;
