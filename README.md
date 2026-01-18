@@ -1,36 +1,26 @@
 # amplify-astro-adapter
 
-AWS Amplify adapter for Astro. Extends `@astrojs/node` with Amplify Hosting deployment configuration.
+AWS Amplify adapter for Astro with built-in cookie-based sessions.
 
-## Version 0.1.0
-
-This adapter is based on `@astrojs/node` architecture, adding AWS Amplify-specific deployment features and cookie-based session support.
-
-### Features
+## Features
 
 - Astro 4.x and 5.x support
+- **Cookie-based sessions** - Zero config, works with serverless
+- **Auto-generates `amplify.yml`** - Detects your package manager
 - **envGetSecret** support for type-safe environment variables
-- **Cookie-based sessions** (built-in, zero setup)
-- **Auto-generates `amplify.yml`** - detects your package manager and creates the build spec for you
 - Configurable Node.js runtime (nodejs20.x, nodejs22.x)
-- Generates proper `deploy-manifest.json` for Amplify Hosting
 
 ## Installation
 
 ```bash
-# Using npm
 npm install amplify-astro-adapter
-
-# Using yarn
-yarn add amplify-astro-adapter
-
-# Using pnpm
+# or
 pnpm add amplify-astro-adapter
+# or
+yarn add amplify-astro-adapter
 ```
 
-## Configuration
-
-Add the adapter to your Astro config:
+## Quick Start
 
 ```js
 // astro.config.mjs
@@ -38,247 +28,124 @@ import { defineConfig } from 'astro/config';
 import amplify from 'amplify-astro-adapter';
 
 export default defineConfig({
-  output: 'server', // or 'hybrid'
+  output: 'server',
+  adapter: amplify()
+});
+```
+
+That's it! Sessions and middleware are configured automatically.
+
+## Configuration Options
+
+```js
+export default defineConfig({
+  output: 'server',
   adapter: amplify({
     runtime: 'nodejs20.x' // or 'nodejs22.x'
   })
 });
 ```
 
-### Configuration Options
-
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `runtime` | `'nodejs20.x' \| 'nodejs22.x'` | `'nodejs20.x'` | Node.js runtime for AWS Lambda |
-| `experimentalDisableStreaming` | `boolean` | `false` | Disable HTML streaming (useful for Lambda response constraints) |
-| `experimentalStaticHeaders` | `boolean` | `false` | Enable static header file processing (`_headers.json`) |
-| `experimentalErrorPageHost` | `string \| URL` | - | Custom host for fetching prerendered error pages |
-
-```js
-// Advanced configuration example
-export default defineConfig({
-  output: 'server',
-  adapter: amplify({
-    runtime: 'nodejs22.x',
-    experimentalDisableStreaming: true,
-    experimentalStaticHeaders: false,
-    experimentalErrorPageHost: 'https://errors.example.com',
-  })
-});
-```
-
-### Server Modes
-
-The adapter supports two server modes (inherited from `@astrojs/node`):
-
-- **`standalone`** (default) - Auto-starts an HTTP server, serves static files, handles all requests. Used by AWS Amplify Lambda.
-- **`middleware`** - Exports a handler for integration with Express, Fastify, or other Node.js frameworks.
 
 ## Sessions
 
-This adapter includes built-in cookie-based session support as the **default Astro session driver**. No external session storage (Redis, DynamoDB, etc.) is needed - sessions are stored in HTTP-only cookies and work immediately with AWS Lambda.
-
-### Key Features
-
-- **Zero configuration** - Cookie sessions are enabled by default
-- **Encrypted with iron-session** - Session data is securely encrypted
-- **Automatic chunking** - Large sessions are automatically split across multiple cookies
-- **No external dependencies** - No Redis, DynamoDB, or other storage required
+Sessions are **enabled by default** with zero configuration. Data is stored in encrypted HTTP-only cookies.
 
 ### Environment Variable
 
-Set a session secret for encryption (32+ characters recommended):
+Set a session secret for encryption (32+ characters):
 
 ```bash
-SESSION_SECRET=your-32-character-or-longer-secret
+AMPLIFY_SESSION_PASSWORD=your-32-character-or-longer-secret
 ```
 
-> **Note:** If `SESSION_SECRET` is not set, a default secret is used in development. Always set a secure secret in production.
+> In development, a secret is auto-generated. **Always set this in production.**
 
-### Auto-Configuration
+### Using Sessions
 
-Sessions are automatically enabled when you use this adapter (no configuration needed):
+```astro
+---
+// src/pages/dashboard.astro
+const username = await Astro.session?.get('username');
+---
+
+<h1>Welcome {username}!</h1>
+```
+
+### API Routes
+
+```ts
+// src/pages/api/login.ts
+import type { APIRoute } from 'astro';
+
+export const POST: APIRoute = async ({ session, request, redirect }) => {
+  const formData = await request.formData();
+  const username = formData.get('username') as string;
+
+  session?.set('username', username);
+
+  return redirect('/');
+};
+```
+
+```ts
+// src/pages/api/logout.ts
+import type { APIRoute } from 'astro';
+
+export const POST: APIRoute = async ({ session, redirect }) => {
+  await session?.destroy();
+  return redirect('/');
+};
+```
+
+### Custom Session Configuration
 
 ```js
-// astro.config.mjs
 import { defineConfig } from 'astro/config';
 import amplify from 'amplify-astro-adapter';
+import { createCookieSessionDriver } from 'amplify-astro-adapter/session';
 
 export default defineConfig({
   output: 'server',
   adapter: amplify(),
   session: {
-    // Cookie session is the default - no driver config needed!
-    // Or explicitly:
-    // driver: 'amplify-astro-adapter/session',
-  },
-});
-```
-
-### Custom Session Options
-
-If you want to customize the session behavior, you can manually configure it:
-
-```js
-import { defineConfig } from 'astro/config';
-import amplify from 'amplify-astro-adapter';
-import { createSessionStorage } from 'amplify-astro-adapter/session';
-
-export default defineConfig({
-  adapter: amplify({ runtime: 'nodejs20.x' }),
-  session: createSessionStorage({
-    prefix: 'myapp_session',
-    cookie: {
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      sameSite: 'lax',
-      httpOnly: true,
-      secure: true,
-    }
-  })
-});
-```
-
-### Using Sessions in Pages
-
-Access sessions directly in `.astro` files:
-
-```astro
----
-// src/pages/dashboard.astro
-const session = await Astro.session;
-const user = await session?.get('user');
-await session?.set('lastVisit', new Date().toISOString());
----
-
-<html>
-  <body>
-    {user ? (
-      <h1>Welcome back, {user.name}!</h1>
-    ) : (
-      <a href="/login">Please log in</a>
-    )}
-  </body>
-</html>
-```
-
-### Using Sessions in API Routes
-
-```ts
-// src/pages/api/session.ts
-import type { APIRoute } from 'astro';
-
-export const POST: APIRoute = async ({ session }) => {
-  // Set session data
-  await session?.set('userId', '123');
-  await session?.set('cart', ['item1', 'item2']);
-
-  return Response.json({ success: true });
-};
-
-export const GET: APIRoute = async ({ session }) => {
-  // Get session data
-  const userId = await session?.get('userId');
-  const cart = await session?.get('cart') ?? [];
-
-  return Response.json({ userId, cart });
-};
-
-export const DELETE: APIRoute = async ({ session }) => {
-  // Destroy session
-  await session?.delete('userId');
-  // or destroy entire session:
-  await session?.destroy();
-
-  return Response.json({ success: true });
-};
-```
-
-### Direct Cookie Helpers (Bypass Astro Sessions)
-
-For simple cases where you don't need the full Astro session API, you can use the helper functions directly:
-
-```ts
-import type { APIRoute } from 'astro';
-import { getSession, setSession, destroySession } from 'amplify-astro-adapter/session';
-
-export const POST: APIRoute = async ({ cookies }) => {
-  await setSession(cookies, { userId: '123', cart: ['item1', 'item2'] });
-  return Response.json({ success: true });
-};
-
-export const GET: APIRoute = async ({ cookies }) => {
-  const session = await getSession(cookies);
-  return Response.json({ session });
-};
-
-export const DELETE: APIRoute = async ({ cookies }) => {
-  await destroySession(cookies);
-  return Response.json({ success: true });
-};
-```
-
-### Middleware Integration
-
-To make sessions available automatically across your app, add this to your `src/env.d.ts`:
-
-```typescript
-/// <reference types="astro/client" />
-
-declare namespace App {
-  interface Locals {
-    /**
-     * Session data automatically available in middleware and pages
-     */
-    session?: import('amplify-astro-adapter/session').SessionData;
+    driver: createCookieSessionDriver({
+      password: process.env.AMPLIFY_SESSION_PASSWORD,
+      ttl: 86400, // 1 day in seconds
+      cookieOptions: {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+      }
+    })
   }
-}
-```
-
-Then create `src/middleware.ts`:
-
-```ts
-import { defineMiddleware } from 'astro:middleware';
-import { getSession } from 'amplify-astro-adapter/session';
-
-export const onRequest = defineMiddleware(async (context) => {
-  // Load session into context.locals
-  context.locals.session = await getSession(context.cookies);
-
-  // Session is now automatically available in all pages
-  return next();
 });
-```
-
-Access the session in components:
-
-```astro
----
-// Session is automatically available via Astro.locals
-const userId = Astro.locals.session?.userId;
----
-<h1>Welcome {userId}</h1>
 ```
 
 ### Session Limitations
 
-- **4KB size limit** per cookie (browsers support ~50+ cookies = ~200KB total)
-- **Client-stored** - data can be viewed by the user (use httpOnly for XSS protection)
-- **Cannot invalidate** before expiration (delete the cookie to invalidate)
+- **4KB per cookie** - Large sessions auto-chunk across multiple cookies
+- **Client-stored** - Encrypted, but don't store sensitive server-only data
 
-**What fits in 4KB:**
-- User IDs, auth tokens
-- Shopping cart contents
-- User preferences
-- Session metadata
+## AWS Amplify Hosting
 
-**What doesn't fit:**
-- Large file uploads
-- Extensive logging data
-- Large datasets
+### amplify.yml Auto-Generation
+
+On first build, the adapter generates `amplify.yml` for your package manager. Just commit it and deploy!
+
+### Build Settings
+
+Set the custom image environment variable in Amplify Console:
+
+```
+_CUSTOM_IMAGE=amplify:al2023
+```
 
 ## envGetSecret Support
-
-Use type-safe environment variables with Astro's `astro:env/server`:
 
 ```ts
 import { getSecret } from 'astro:env/server';
@@ -286,118 +153,24 @@ import { getSecret } from 'astro:env/server';
 const apiKey = await getSecret('API_KEY');
 ```
 
-## AWS Amplify Hosting
-
-### amplify.yml Auto-Generation
-
-When you run `astro build` for the first time, this adapter automatically generates an `amplify.yml` file in your project root. It detects your package manager (npm, pnpm, yarn, or bun) and creates the appropriate build specification.
-
-Just commit the generated `amplify.yml` to your repository and deploy!
-
-### Build Settings
-
-Set the custom image environment variable:
-
-```
-_CUSTOM_IMAGE=amplify:al2023
-```
-
-### Build Specifications (Reference)
-
-The adapter generates these for you, but for reference:
-
-**npm:**
-```yaml
-version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-    build:
-      commands:
-        - npm run build
-        - mv node_modules ./.amplify-hosting/compute/default
-  artifacts:
-    baseDirectory: .amplify-hosting
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-```
-
-**pnpm:**
-```yaml
-version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm i -g pnpm
-        - pnpm config set store-dir .pnpm-store
-        - pnpm i
-    build:
-      commands:
-        - pnpm run build
-  artifacts:
-    baseDirectory: .amplify-hosting
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - .pnpm-store/**/*
-```
-
-**yarn:**
-```yaml
-version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - yarn install
-    build:
-      commands:
-        - yarn run build
-        - mv node_modules ./.amplify-hosting/compute/default
-  artifacts:
-    baseDirectory: .amplify-hosting
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-```
-
 ## Migration from astro-aws-amplify
 
-If you're migrating from the old `astro-aws-amplify` package:
+```bash
+npm uninstall astro-aws-amplify
+npm install amplify-astro-adapter
+```
 
-1. Update your dependencies:
-   ```bash
-   npm uninstall astro-aws-amplify
-   npm install amplify-astro-adapter
-   ```
-
-2. Update your import:
-   ```diff
-   - import awsAmplify from 'astro-aws-amplify';
-   + import amplify from 'amplify-astro-adapter';
-   ```
-
-3. No other changes needed - configuration is the same!
+```diff
+- import awsAmplify from 'astro-aws-amplify';
++ import amplify from 'amplify-astro-adapter';
+```
 
 ## Package Exports
-
-The adapter provides multiple entry points:
 
 | Export | Description |
 |--------|-------------|
 | `amplify-astro-adapter` | Main adapter function |
-| `amplify-astro-adapter/server` | Server runtime (used internally by Astro) |
-| `amplify-astro-adapter/session` | Session driver and helpers |
-| `amplify-astro-adapter/middleware` | Cookie context middleware (used internally) |
+| `amplify-astro-adapter/session` | Session driver for custom configuration |
 
 ## License
 
@@ -406,7 +179,3 @@ MIT
 ## Author
 
 Zach Handley <zachhandley@gmail.com>
-
-## Acknowledgements
-
-Extends the official [`@astrojs/node`](https://github.com/withastro/astro/tree/main/packages/integrations/node) adapter with AWS Amplify Hosting deployment configuration.
