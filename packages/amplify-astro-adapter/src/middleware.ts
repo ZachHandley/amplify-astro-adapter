@@ -82,6 +82,15 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       const cookieOptions = config?.cookieOptions;
 
       // Build cookie string
+      // For localhost: no Domain (host-only cookie)
+      // For production: .domain.com (include subdomains)
+      const url = new URL(context.request.url);
+      const hostname = url.hostname;
+      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+      const cookieDomain = isLocalhost
+        ? undefined
+        : '.' + hostname.replace(/^www\./, '');
+
       const cookieParts = [
         `${SESSION_DATA_COOKIE}=${entry.data}`,
         `Path=${cookieOptions?.path ?? '/'}`,
@@ -89,6 +98,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         cookieOptions?.httpOnly !== false ? 'HttpOnly' : '',
         (cookieOptions?.secure ?? driverContext.isSecure) ? 'Secure' : '',
         `SameSite=${cookieOptions?.sameSite ?? 'Lax'}`,
+        cookieDomain ? `Domain=${cookieDomain}` : '',
       ]
         .filter(Boolean)
         .join('; ');
