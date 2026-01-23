@@ -183,8 +183,12 @@ export function createCookieSessionDriver(options: CookieSessionDriverOptions = 
           ttl: config.ttl,
         });
         return decrypted?._d ?? null;
-      } catch {
-        // Invalid or expired session data
+      } catch (err) {
+        // Invalid or expired session data - log for debugging
+        console.error(
+          '[session-driver] Failed to unseal session data:',
+          err instanceof Error ? err.message : String(err)
+        );
         return null;
       }
     },

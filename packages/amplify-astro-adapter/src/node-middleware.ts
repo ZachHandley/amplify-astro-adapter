@@ -30,11 +30,12 @@ export default function createMiddleware(app: NodeApp, options: Options): Reques
     try {
       await handler(req, res, next, locals);
     } catch (err) {
-      logger.error(`Could not render ${req.url}`);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error(`Could not render ${req.url}: ${errMsg}`);
       console.error(err);
       if (!res.headersSent) {
         res.writeHead(500, `Server error`);
-        res.end();
+        res.end('Internal Server Error');
       }
     }
   };

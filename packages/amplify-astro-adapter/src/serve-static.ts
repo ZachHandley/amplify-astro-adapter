@@ -95,7 +95,10 @@ export function createStaticHandler(app: NodeApp, options: Options) {
 
       stream.on('error', (err) => {
         if (forwardError) {
-          console.error(err.toString());
+          console.error(
+            '[serve-static] Stream error:',
+            err instanceof Error ? err.stack || err.message : String(err)
+          );
           res.writeHead(500);
           res.end('Internal server error');
           return;

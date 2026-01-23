@@ -38,7 +38,8 @@ export function createStandaloneHandler(app: NodeApp, options: Options) {
   return (req: http.IncomingMessage, res: http.ServerResponse) => {
     try {
       decodeURI(req.url!);
-    } catch {
+    } catch (err) {
+      console.error('[standalone] Invalid URI:', err instanceof Error ? err.message : String(err));
       res.writeHead(400);
       res.end('Bad request.');
       return;

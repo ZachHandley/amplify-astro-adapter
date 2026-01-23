@@ -17,7 +17,8 @@ export function createAppHandler(app: NodeApp, options: Options): RequestHandler
 
   process.on('unhandledRejection', (reason) => {
     const requestUrl = als.getStore();
-    logger.error(`Unhandled rejection while rendering ${requestUrl}`);
+    const errMsg = reason instanceof Error ? reason.message : String(reason);
+    logger.error(`Unhandled rejection while rendering ${requestUrl}: ${errMsg}`);
     console.error(reason);
   });
 
@@ -41,7 +42,8 @@ export function createAppHandler(app: NodeApp, options: Options): RequestHandler
         allowedDomains: app.getAllowedDomains?.() ?? [],
       });
     } catch (err) {
-      logger.error(`Could not render ${req.url}`);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error(`Could not render ${req.url}: ${errMsg}`);
       console.error(err);
       res.statusCode = 500;
       res.end('Internal Server Error');
