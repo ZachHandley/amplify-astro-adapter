@@ -40,7 +40,7 @@ jobs:
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
 
       - name: Restore cache
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: restore
           key: bun-lint-${{ hashFiles('**/bun.lockb') }}
@@ -59,7 +59,7 @@ jobs:
 
       - name: Save cache
         if: always()
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: save
           key: bun-lint-${{ hashFiles('**/bun.lockb') }}
@@ -92,7 +92,7 @@ jobs:
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
 
       - name: Restore cache
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: restore
           key: bun-typecheck-${{ hashFiles('**/bun.lockb') }}
@@ -111,7 +111,7 @@ jobs:
 
       - name: Save cache
         if: always()
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: save
           key: bun-typecheck-${{ hashFiles('**/bun.lockb') }}
@@ -144,7 +144,7 @@ jobs:
           echo "//forge.blackleafdigital.com/api/packages/blackleafdigital/npm/:_authToken=${{ secrets.FORGEJO_ACTIONS_TOKEN }}" >> ~/.npmrc
 
       - name: Restore cache
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: restore
           key: bun-build-${{ hashFiles('**/bun.lockb') }}
@@ -163,7 +163,7 @@ jobs:
 
       - name: Save cache
         if: always()
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: save
           key: bun-build-${{ hashFiles('**/bun.lockb') }}
@@ -194,7 +194,7 @@ jobs:
         run: bun install && bun run build
 
       - name: Run Intellitester
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
+        uses: https://forge.blackleafdigital.com/Public/actions/intellitester@main
         with:
           test-file: tests/
           playwright-browsers: 'chromium'
@@ -218,7 +218,7 @@ jobs:
         run: bun install && bun run build
 
       - name: Run Intellitester
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
+        uses: https://forge.blackleafdigital.com/Public/actions/intellitester@main
         with:
           test-file: tests/
           browser: 'firefox'
@@ -243,7 +243,7 @@ jobs:
         run: bun install && bun run build
 
       - name: Run Intellitester
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/intellitester@main
+        uses: https://forge.blackleafdigital.com/Public/actions/intellitester@main
         with:
           test-file: tests/
           browser: 'webkit'
@@ -282,7 +282,7 @@ jobs:
     if: always()
     steps:
       - name: Cleanup old caches
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: cleanup
           max-age-days: '30'

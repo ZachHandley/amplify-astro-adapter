@@ -69,7 +69,7 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_ACCESS_TOKEN }}" >> ~/.npmrc
 
       - name: Restore cache
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: restore
           key: bun-publish-${{ hashFiles('**/bun.lockb') }}
@@ -115,7 +115,7 @@ jobs:
 
       - name: Save cache
         if: always()
-        uses: https://forge.blackleafdigital.com/BlackLeafDigital/actions/s3-cache@main
+        uses: https://forge.blackleafdigital.com/Public/actions/s3-cache@main
         with:
           mode: save
           key: bun-publish-${{ hashFiles('**/bun.lockb') }}
